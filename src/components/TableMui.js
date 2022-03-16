@@ -1,5 +1,6 @@
 import React, {useEffect} from "react";
 import PropTypes from "prop-types";
+import { useTheme } from '@mui/material/styles';
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -19,9 +20,19 @@ import TextField from '@mui/material/TextField';
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import DatePicker from '@mui/lab/DatePicker';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Select from '@mui/material/Select';
+//import Chip from '@mui/material/Chip';
 
 
 const jsonRows = teeTimes;
+
+
+
+
 
 
 function descendingComparator(a, b, orderBy) {
@@ -66,6 +77,12 @@ const headCells = [
     numeric: true,
     disablePadding: false,
     label: "Time",
+  },
+  {
+    id: "allowed_group_sizes",
+    numeric: true,
+    disablePadding: false,
+    label: "Group Sizes",
   },
   {
     id: "green_fee",
@@ -133,6 +150,7 @@ EnhancedTableHead.propTypes = {
 };
 
 export default function EnhancedTable() {
+  const theme = useTheme();
   const [order, setOrder] = React.useState("asc");
   const [orderBy, setOrderBy] = React.useState("calories");
   const [page, setPage] = React.useState(0);
@@ -141,6 +159,7 @@ export default function EnhancedTable() {
   const [date, setDate] = React.useState(null);
   //TODO use state for api req
   const [rows, setRows] = React.useState([]);
+  const [numOfPeopleFilter, setNumOfPeopleFilter] = React.useState([]);
 
   useEffect(() => {
       /* const fetchData = async()=>{
@@ -171,16 +190,53 @@ export default function EnhancedTable() {
     setPage(0);
   };
 
-  const handleDateChange = (newValue)=>{
+  const filterControl = ()=>{
+
     const filteredRows = jsonRows.filter(row=>{
-        const time = row.time;
-        return dayjs(newValue).isSame(time, 'day')
+      const time = row.time;
+      
+      const rowValues = row.allowed_group_sizes;
+      if(numOfPeopleFilter && date){
+        
+        return dayjs(date).isSame(time, 'day') && rowValues.indexOf(numOfPeopleFilter) > -1;
+
+      } else if(numOfPeopleFilter){
+        const rowValues = row.allowed_group_sizes;
+        
+        return rowValues.indexOf(numOfPeopleFilter) > -1
+      }else{
+        
+        return dayjs(date).isSame(time, 'day')
+      }
+
+    
     })
-        console.log('filteredRows', filteredRows)
-        setRows(filteredRows);
+
+    
+
+    setRows(filteredRows);
+  }
+
+  const handleDateChange = (newValue)=>{
+    
+        //console.log('filteredRows', filteredRows)
+      
         setDate(newValue);
+
+        filterControl()
       
   }
+
+  const handlePeopleFilterChange = (event) => {
+    const {
+      target: { value },
+    } = event;
+    setNumOfPeopleFilter(
+      value,
+    );
+
+    filterControl()
+  };
 
   
 
@@ -198,6 +254,7 @@ export default function EnhancedTable() {
       >
         Tee Times
       </Typography>
+
       <div style={{margin: '15px 0px'}}>
       <LocalizationProvider dateAdapter={AdapterDateFns}>
       <DatePicker
@@ -208,6 +265,22 @@ export default function EnhancedTable() {
         onChange={handleDateChange}
       />
     </LocalizationProvider>
+
+    <FormControl sx={{ marginLeft: 1, width: 300 }}>
+        <InputLabel id="players-filter">Number of Players</InputLabel>
+        <Select
+          labelId="demo-simple-select-label"
+          id="demo-simple-select"
+          value={numOfPeopleFilter}
+          label="Number of Players"
+          onChange={handlePeopleFilterChange}
+        >
+          <MenuItem value={1}>1</MenuItem>
+          <MenuItem value={2}>2</MenuItem>
+          <MenuItem value={3}>3</MenuItem>
+          <MenuItem value={4}>4</MenuItem>
+        </Select>
+      </FormControl>
       </div>
       
       <Paper sx={{ width: "100%", mb: 2 }}>
@@ -248,8 +321,9 @@ export default function EnhancedTable() {
                   }
                 
 
-                  const totalFee = convertToDollar(row.green_fee + row.cart_fee)
-                  //const groupSizes = row.allowed_group_sizes.join(",")
+                  console.log('row.cart_fee', row.cart_fee)
+                  const totalFee = convertToDollar((row.green_fee || 0) + (row.cart_fee || 0))
+                  const groupSizes = row.allowed_group_sizes?.join(", ") || ""
                   return (
                     <TableRow
                       hover
@@ -266,6 +340,7 @@ export default function EnhancedTable() {
                         {row.course_name}
                       </TableCell>
                       <TableCell align="right">{dayjs(row.time).format('MM/DD/YY hh:mma')}</TableCell>
+                      <TableCell align="right">{groupSizes}</TableCell>
                       <TableCell align="right">{convertToDollar(row.green_fee)}</TableCell>
                       <TableCell align="right">{convertToDollar(row.cart_fee)}</TableCell>
                       <TableCell align="right">{totalFee}</TableCell>

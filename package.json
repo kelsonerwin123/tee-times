@@ -2,7 +2,7 @@
   "name": "tee-times",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://kelsonerwin123.github.io",
+  "homepage": "https://kelsonerwin123.github.io/tee-times",
   "dependencies": {
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",
